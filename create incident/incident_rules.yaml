@@ -1,0 +1,171 @@
+- name: loc_irellevant
+  filter:
+    asset_matches.match.keyword_type: location.postal_town
+    confidence_score:
+      $lte: 0.8
+  action: update
+  update:
+    threatLevel: 1
+    isManClassified: true
+- name: low_confidence_irellevant
+  filter:
+    confidence_score:
+      $lt: 0.75
+    asset_type: domain
+  action: update
+  update:
+    threatLevel: 1
+    isManClassified: true
+- name: person_low_confidence
+  filter:
+    confidence_score:
+      $lt: 0.85
+    asset_type: person
+  action: update
+  update:
+    threatLevel: 1
+    isManClassified: true
+- name: leaked_credentials_domain
+  filter:
+    site:
+      $regex: ^dumps.intelliagg
+    asset_type: domain
+  action: incident
+  params:
+    incident_type: leaked_credentials_domain
+    threatLevel: 3
+    isManClassified: true
+    dump: true
+- name: executive_credentials
+  filter:
+    site:
+      $regex: ^dumps.intelliagg
+    asset_type: person
+  action: incident
+  params:
+    incident_type: executive_credentials
+    threatLevel: 2
+    isManClassified: true
+    dump: true
+- name: pastebin_high_confidence
+  filter:
+    confidence_score:
+      $gt: 0.9
+    site:
+      $regex: ^pastebin.intelliagg
+  action: incident
+  params:
+    incident_type: pastebin_mention
+- name: tor_node
+  filter:
+    confidence_score:
+      $gt: 0.75
+    site: jlve2y45zacpbz6s.onion
+    asset_type:
+      $in:
+        - domain
+  action: incident
+  params:
+    incident_type: tor_node
+- name: ny_times
+  filter:
+    confidence_score:
+      $gt: 0.75
+    site:
+      $regex: nytimes3xbfgragh.onion$
+  action: incident
+  params:
+    incident_type: ny_times
+- name: leaked_executive_details
+  filter:
+    site:
+      $regex: dumps.intelliagg.com
+    asset_type: person
+    cuts.cut:
+      $regex: Passwords|passwords
+    confidence_score:
+      $gt: 0.7
+  action: incident
+  params:
+    incident_type: pwned_executive_details
+    dump: true
+- name: darknet_persons
+  filter:
+    confidence_score:
+      $gt: 0.75
+    asset_type:
+      $in:
+        - person
+    sourceNetwork: darknet
+  action: incident
+  params:
+    incident_type: darknet_person
+- name: darknet_findings
+  filter:
+    sourceNetwork: darknet
+    confidence_score:
+      $gt: 0.7
+  action: incident
+  params:
+    incident_type: darknet_asset
+- name: whois_data_existing
+  filter:
+    url:
+      $regex: whois.intelliagg.*\/legacy_domain
+    confidence_score:
+      $gt: 0.7
+    asset_type: domain
+    asset_matches.match.keyword_type: name.common
+  action: incident
+  params:
+    threat_level: 2
+    incident_type: existing_similar_domain
+- name: whois_data
+  filter:
+    site:
+      $regex: ^whois.intelliagg
+    confidence_score:
+      $gt: 0.7
+    asset_type: domain
+    asset_matches.match.keyword_type: name.common
+  action: incident
+  params:
+    threat_level: 4
+    incident_type: similar_domain
+- name: potential_leaked_passwords
+  filter:
+    crypto.1:
+      $exists: 1
+    site:
+      $ne: dumps.intelliagg.com
+    email.0:
+      $exists: 1
+    confidence_score:
+      $gt: 0.7
+  action: incident
+  params:
+    incident_type: leaked_password_hashes
+- name: new_multi_cert
+  filter:
+    site:
+      $regex: ^certs.intelliagg
+    asset_type: domain
+    asset_matches.match.keyword_type: name.common
+    asset_matches.match.url:
+      $regex: '#multi-domain$'
+  action: incident
+  params:
+    incident_type: new_multi_cert
+    threatLevel: 3
+    isManClassified: true
+- name: new_host_cert
+  filter:
+    site:
+      $regex: ^certs.intelliagg
+    asset_type: domain
+    asset_matches.match.keyword_type: name.common
+  action: incident
+  params:
+    incident_type: new_cert_discovered
+    threatLevel: 2
+    isManClassified: true

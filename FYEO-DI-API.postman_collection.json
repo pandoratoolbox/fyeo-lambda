@@ -1,0 +1,468 @@
+{
+	"info": {
+		"_postman_id": "89f60b0a-822d-4247-860c-90f32069d3aa",
+		"name": "FYEO-DI-API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Reset Password Confirm",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"username\": \"deen\",\r\n    \"code\": \"579459\",\r\n    \"new_password\": \"Test12345.\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login/password_reset/confirm",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login",
+								"password_reset",
+								"confirm"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"username\": \"deen\",\r\n    \"password\": \"Test12345.\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Username Check",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"username\": \"deen\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/register/username_check",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"register",
+								"username_check"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Register",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"username\": \"\",\r\n    \"first_name\": \"\",\r\n    \"last_name\": \"\",\r\n    \"password\": \"\",\r\n    \"email\" : \"\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/register",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"register"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Reset Password",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"username\": \"deen\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login/password_reset",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login",
+								"password_reset"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Register Confirm",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"username\": \"deen\",\r\n    \"code\": \"\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/register/confirm",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"register",
+								"confirm"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Incident",
+			"item": [
+				{
+					"name": "Retrieve Incident",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJraWQiOiJCdVlsTFdBOWpsYVU5MWszYWlTOG8yWHZYbnFQRlZ0RGNkSGdNR1FHV0ZFPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiJjYjdjOWFhOC1jZWI4LTQzMDktYThkMy1mNDI1ODE5N2M2M2EiLCJjb2duaXRvOmdyb3VwcyI6WyJzdGFmZiIsImlhYWRtaW4iLCJncm91cF9oeXBlcmlvbiJdLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiaXNzIjoiaHR0cHM6XC9cL2NvZ25pdG8taWRwLmV1LW5vcnRoLTEuYW1hem9uYXdzLmNvbVwvZXUtbm9ydGgtMV9qb29MZ283ZkgiLCJjb2duaXRvOnVzZXJuYW1lIjoiZGVlbiIsImdpdmVuX25hbWUiOiJkZWVuIiwib3JpZ2luX2p0aSI6Ijk4Y2IwZGUwLWRjNDQtNDgwNC1hNWM3LTk5YjcyM2Y2MGM2ZSIsImF1ZCI6IjI3ZzlvbTA4Nmc5anRqMjdzZG9udHA5MWIwIiwiZXZlbnRfaWQiOiJiNGRmYjdlYi02ZGE2LTQyYjMtYWMyNS1jMWU4MjExNzgzYzEiLCJ0b2tlbl91c2UiOiJpZCIsImF1dGhfdGltZSI6MTYzMzQ5MTgyMCwibmFtZSI6ImRlZW4gaCIsImV4cCI6MTYzMzQ5NTQyMCwiY3VzdG9tOnJvbGUiOiIxIiwiaWF0IjoxNjMzNDkxODIwLCJmYW1pbHlfbmFtZSI6ImgiLCJqdGkiOiJhYTI1YmFjOC0zNGM4LTRiNDAtODY1OC0wMjU5MDRjMjQ4OGMiLCJlbWFpbCI6InBhbmRvcmF0b29sYm94QGdtYWlsLmNvbSJ9.uED42_pvqJT4dXGYPpd-SCkdq0mr3sPATwG4rJMRPAgI_-2yyAo8yfMCad8gCiXrCw2T7Zu8i7BKKTc6l-cyjueci49TCRYUi1OqP8g5_6zr9aizHDnUBCmm-T6J3_WTw8at254d3rsq54BKaF3sX6A6TcVsqvJt_ZdMBOLd-yxs_CcQ3IMP7smoGmR4_sbyJdGRACK5HAbLOgYavkwfIeZq1OraLoPIhhS4VBXuRvJt2UWWwZc9m6v1SeMDu9eOP1lSVk8P7G2-m174dX9ej2aknvn2gGoaeop0yWO65aJfNqMYWYEn_XPKv1IVPDB1nK3e72_rjz-YEqOfoMhr4Q",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{token}}.eyJpZCI6MjEsInR5cGUiOiJjb25zdWx0YW50IiwidXNlcm5hbWUiOiJ0ZXN0MSJ9.NtZJEOV4gUojHaSs-zwgnaWEHx04f3ka5uYnFd8kgyw",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/incident/5de9748238c332bdf304d8fa",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"incident",
+								"5de9748238c332bdf304d8fa"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Incident",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJraWQiOiJWc29DS2NKM3d4RitYaGJYamVVZW9IbmR4cGkza2QrWUVhQW5KTXVEOEdJPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiJjYjdjOWFhOC1jZWI4LTQzMDktYThkMy1mNDI1ODE5N2M2M2EiLCJjb2duaXRvOmdyb3VwcyI6WyJzdGFmZiIsImlhYWRtaW4iLCJncm91cF9oeXBlcmlvbiJdLCJpc3MiOiJodHRwczpcL1wvY29nbml0by1pZHAuZXUtbm9ydGgtMS5hbWF6b25hd3MuY29tXC9ldS1ub3J0aC0xX2pvb0xnbzdmSCIsImNsaWVudF9pZCI6IjI3ZzlvbTA4Nmc5anRqMjdzZG9udHA5MWIwIiwib3JpZ2luX2p0aSI6IjY1MTJjN2ZkLTI2OTktNDRmOS05OTZlLWQyMTZiMGU5NDZiYiIsImV2ZW50X2lkIjoiNDY3Y2UyYTQtOTE4OC00ZDdlLWEyZDctZTI5NzgwZDQwMDkyIiwidG9rZW5fdXNlIjoiYWNjZXNzIiwic2NvcGUiOiJhd3MuY29nbml0by5zaWduaW4udXNlci5hZG1pbiIsImF1dGhfdGltZSI6MTYzMDA1NzY4NiwiZXhwIjoxNjMwMDYxMjg2LCJpYXQiOjE2MzAwNTc2ODYsImp0aSI6IjEwZWZhNTk0LTg1OGEtNGUxZC1hOTdiLTJkNmI0MTMwMTliYSIsInVzZXJuYW1lIjoiZGVlbiJ9.IIwujMu0vBHkv69ra4ApknVSNJP7ropK5OnlUpD07TMRTHm-imdaU2uZ_P8UePXPqMwGqxkwxTtEmIVV9BKXASew6LRL_bWKIKLMODwtWoXiF_6mUCqtk0ubJVt57Qvr-YbubqgdJBXZIxZSeFUnVB0jYYv_l5RcFxMp-Gbd5impJlCW0KuX3z9hcoaTs4LoU7E07pVsQwJJFxeZzSKHTBXdUqriQ883EVdxYOiFLqm4fC__EBDbetSlWKP9wsRduEXmlQ3VxjnFvGiDcSLZUNX8aS5jzMbEiTr7p-3SA3hna9u3jFb-vwUf-RruIBjheXG7i4xTQKa03gXbA-g6dQ",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{token}}.eyJpZCI6MjEsInR5cGUiOiJjb25zdWx0YW50IiwidXNlcm5hbWUiOiJ0ZXN0MSJ9.NtZJEOV4gUojHaSs-zwgnaWEHx04f3ka5uYnFd8kgyw",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"test\":\"test\"\r\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/incident",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"incident"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Asset",
+			"item": [
+				{
+					"name": "Retrieve Asset",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJraWQiOiJCdVlsTFdBOWpsYVU5MWszYWlTOG8yWHZYbnFQRlZ0RGNkSGdNR1FHV0ZFPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiJjYjdjOWFhOC1jZWI4LTQzMDktYThkMy1mNDI1ODE5N2M2M2EiLCJjb2duaXRvOmdyb3VwcyI6WyJzdGFmZiIsImlhYWRtaW4iLCJncm91cF9oeXBlcmlvbiJdLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiaXNzIjoiaHR0cHM6XC9cL2NvZ25pdG8taWRwLmV1LW5vcnRoLTEuYW1hem9uYXdzLmNvbVwvZXUtbm9ydGgtMV9qb29MZ283ZkgiLCJjb2duaXRvOnVzZXJuYW1lIjoiZGVlbiIsImdpdmVuX25hbWUiOiJkZWVuIiwib3JpZ2luX2p0aSI6Ijk4Y2IwZGUwLWRjNDQtNDgwNC1hNWM3LTk5YjcyM2Y2MGM2ZSIsImF1ZCI6IjI3ZzlvbTA4Nmc5anRqMjdzZG9udHA5MWIwIiwiZXZlbnRfaWQiOiJiNGRmYjdlYi02ZGE2LTQyYjMtYWMyNS1jMWU4MjExNzgzYzEiLCJ0b2tlbl91c2UiOiJpZCIsImF1dGhfdGltZSI6MTYzMzQ5MTgyMCwibmFtZSI6ImRlZW4gaCIsImV4cCI6MTYzMzQ5NTQyMCwiY3VzdG9tOnJvbGUiOiIxIiwiaWF0IjoxNjMzNDkxODIwLCJmYW1pbHlfbmFtZSI6ImgiLCJqdGkiOiJhYTI1YmFjOC0zNGM4LTRiNDAtODY1OC0wMjU5MDRjMjQ4OGMiLCJlbWFpbCI6InBhbmRvcmF0b29sYm94QGdtYWlsLmNvbSJ9.uED42_pvqJT4dXGYPpd-SCkdq0mr3sPATwG4rJMRPAgI_-2yyAo8yfMCad8gCiXrCw2T7Zu8i7BKKTc6l-cyjueci49TCRYUi1OqP8g5_6zr9aizHDnUBCmm-T6J3_WTw8at254d3rsq54BKaF3sX6A6TcVsqvJt_ZdMBOLd-yxs_CcQ3IMP7smoGmR4_sbyJdGRACK5HAbLOgYavkwfIeZq1OraLoPIhhS4VBXuRvJt2UWWwZc9m6v1SeMDu9eOP1lSVk8P7G2-m174dX9ej2aknvn2gGoaeop0yWO65aJfNqMYWYEn_XPKv1IVPDB1nK3e72_rjz-YEqOfoMhr4Q",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{token}}.eyJpZCI6MjEsInR5cGUiOiJjb25zdWx0YW50IiwidXNlcm5hbWUiOiJ0ZXN0MSJ9.NtZJEOV4gUojHaSs-zwgnaWEHx04f3ka5uYnFd8kgyw",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/asset/5a6228bf1d41c8a4e8a91c66",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"asset",
+								"5a6228bf1d41c8a4e8a91c66"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Case",
+			"item": [
+				{
+					"name": "Case Assets",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJraWQiOiJCdVlsTFdBOWpsYVU5MWszYWlTOG8yWHZYbnFQRlZ0RGNkSGdNR1FHV0ZFPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiJjYjdjOWFhOC1jZWI4LTQzMDktYThkMy1mNDI1ODE5N2M2M2EiLCJjb2duaXRvOmdyb3VwcyI6WyJzdGFmZiIsImlhYWRtaW4iLCJncm91cF9oeXBlcmlvbiJdLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiaXNzIjoiaHR0cHM6XC9cL2NvZ25pdG8taWRwLmV1LW5vcnRoLTEuYW1hem9uYXdzLmNvbVwvZXUtbm9ydGgtMV9qb29MZ283ZkgiLCJjb2duaXRvOnVzZXJuYW1lIjoiZGVlbiIsImdpdmVuX25hbWUiOiJkZWVuIiwib3JpZ2luX2p0aSI6Ijk4Y2IwZGUwLWRjNDQtNDgwNC1hNWM3LTk5YjcyM2Y2MGM2ZSIsImF1ZCI6IjI3ZzlvbTA4Nmc5anRqMjdzZG9udHA5MWIwIiwiZXZlbnRfaWQiOiJiNGRmYjdlYi02ZGE2LTQyYjMtYWMyNS1jMWU4MjExNzgzYzEiLCJ0b2tlbl91c2UiOiJpZCIsImF1dGhfdGltZSI6MTYzMzQ5MTgyMCwibmFtZSI6ImRlZW4gaCIsImV4cCI6MTYzMzQ5NTQyMCwiY3VzdG9tOnJvbGUiOiIxIiwiaWF0IjoxNjMzNDkxODIwLCJmYW1pbHlfbmFtZSI6ImgiLCJqdGkiOiJhYTI1YmFjOC0zNGM4LTRiNDAtODY1OC0wMjU5MDRjMjQ4OGMiLCJlbWFpbCI6InBhbmRvcmF0b29sYm94QGdtYWlsLmNvbSJ9.uED42_pvqJT4dXGYPpd-SCkdq0mr3sPATwG4rJMRPAgI_-2yyAo8yfMCad8gCiXrCw2T7Zu8i7BKKTc6l-cyjueci49TCRYUi1OqP8g5_6zr9aizHDnUBCmm-T6J3_WTw8at254d3rsq54BKaF3sX6A6TcVsqvJt_ZdMBOLd-yxs_CcQ3IMP7smoGmR4_sbyJdGRACK5HAbLOgYavkwfIeZq1OraLoPIhhS4VBXuRvJt2UWWwZc9m6v1SeMDu9eOP1lSVk8P7G2-m174dX9ej2aknvn2gGoaeop0yWO65aJfNqMYWYEn_XPKv1IVPDB1nK3e72_rjz-YEqOfoMhr4Q",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{token}}.eyJpZCI6MjEsInR5cGUiOiJjb25zdWx0YW50IiwidXNlcm5hbWUiOiJ0ZXN0MSJ9.NtZJEOV4gUojHaSs-zwgnaWEHx04f3ka5uYnFd8kgyw",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/case/5090e5f2f74c1c08cf56fd7e/assets",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"case",
+								"5090e5f2f74c1c08cf56fd7e",
+								"assets"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Retrieve Case",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJraWQiOiJCdVlsTFdBOWpsYVU5MWszYWlTOG8yWHZYbnFQRlZ0RGNkSGdNR1FHV0ZFPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiJjYjdjOWFhOC1jZWI4LTQzMDktYThkMy1mNDI1ODE5N2M2M2EiLCJjb2duaXRvOmdyb3VwcyI6WyJzdGFmZiIsImlhYWRtaW4iLCJncm91cF9oeXBlcmlvbiJdLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiaXNzIjoiaHR0cHM6XC9cL2NvZ25pdG8taWRwLmV1LW5vcnRoLTEuYW1hem9uYXdzLmNvbVwvZXUtbm9ydGgtMV9qb29MZ283ZkgiLCJjb2duaXRvOnVzZXJuYW1lIjoiZGVlbiIsImdpdmVuX25hbWUiOiJkZWVuIiwib3JpZ2luX2p0aSI6Ijk4Y2IwZGUwLWRjNDQtNDgwNC1hNWM3LTk5YjcyM2Y2MGM2ZSIsImF1ZCI6IjI3ZzlvbTA4Nmc5anRqMjdzZG9udHA5MWIwIiwiZXZlbnRfaWQiOiJiNGRmYjdlYi02ZGE2LTQyYjMtYWMyNS1jMWU4MjExNzgzYzEiLCJ0b2tlbl91c2UiOiJpZCIsImF1dGhfdGltZSI6MTYzMzQ5MTgyMCwibmFtZSI6ImRlZW4gaCIsImV4cCI6MTYzMzQ5NTQyMCwiY3VzdG9tOnJvbGUiOiIxIiwiaWF0IjoxNjMzNDkxODIwLCJmYW1pbHlfbmFtZSI6ImgiLCJqdGkiOiJhYTI1YmFjOC0zNGM4LTRiNDAtODY1OC0wMjU5MDRjMjQ4OGMiLCJlbWFpbCI6InBhbmRvcmF0b29sYm94QGdtYWlsLmNvbSJ9.uED42_pvqJT4dXGYPpd-SCkdq0mr3sPATwG4rJMRPAgI_-2yyAo8yfMCad8gCiXrCw2T7Zu8i7BKKTc6l-cyjueci49TCRYUi1OqP8g5_6zr9aizHDnUBCmm-T6J3_WTw8at254d3rsq54BKaF3sX6A6TcVsqvJt_ZdMBOLd-yxs_CcQ3IMP7smoGmR4_sbyJdGRACK5HAbLOgYavkwfIeZq1OraLoPIhhS4VBXuRvJt2UWWwZc9m6v1SeMDu9eOP1lSVk8P7G2-m174dX9ej2aknvn2gGoaeop0yWO65aJfNqMYWYEn_XPKv1IVPDB1nK3e72_rjz-YEqOfoMhr4Q",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{token}}.eyJpZCI6MjEsInR5cGUiOiJjb25zdWx0YW50IiwidXNlcm5hbWUiOiJ0ZXN0MSJ9.NtZJEOV4gUojHaSs-zwgnaWEHx04f3ka5uYnFd8kgyw",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/case/5090e5f2f74c1c08cf56fd7e",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"case",
+								"5090e5f2f74c1c08cf56fd7e"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Me",
+			"item": [
+				{
+					"name": "My Cases",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJraWQiOiJCdVlsTFdBOWpsYVU5MWszYWlTOG8yWHZYbnFQRlZ0RGNkSGdNR1FHV0ZFPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiJjYjdjOWFhOC1jZWI4LTQzMDktYThkMy1mNDI1ODE5N2M2M2EiLCJjb2duaXRvOmdyb3VwcyI6WyJzdGFmZiIsImlhYWRtaW4iLCJncm91cF9oeXBlcmlvbiJdLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiaXNzIjoiaHR0cHM6XC9cL2NvZ25pdG8taWRwLmV1LW5vcnRoLTEuYW1hem9uYXdzLmNvbVwvZXUtbm9ydGgtMV9qb29MZ283ZkgiLCJjb2duaXRvOnVzZXJuYW1lIjoiZGVlbiIsImdpdmVuX25hbWUiOiJkZWVuIiwib3JpZ2luX2p0aSI6Ijk4Y2IwZGUwLWRjNDQtNDgwNC1hNWM3LTk5YjcyM2Y2MGM2ZSIsImF1ZCI6IjI3ZzlvbTA4Nmc5anRqMjdzZG9udHA5MWIwIiwiZXZlbnRfaWQiOiJiNGRmYjdlYi02ZGE2LTQyYjMtYWMyNS1jMWU4MjExNzgzYzEiLCJ0b2tlbl91c2UiOiJpZCIsImF1dGhfdGltZSI6MTYzMzQ5MTgyMCwibmFtZSI6ImRlZW4gaCIsImV4cCI6MTYzMzQ5NTQyMCwiY3VzdG9tOnJvbGUiOiIxIiwiaWF0IjoxNjMzNDkxODIwLCJmYW1pbHlfbmFtZSI6ImgiLCJqdGkiOiJhYTI1YmFjOC0zNGM4LTRiNDAtODY1OC0wMjU5MDRjMjQ4OGMiLCJlbWFpbCI6InBhbmRvcmF0b29sYm94QGdtYWlsLmNvbSJ9.uED42_pvqJT4dXGYPpd-SCkdq0mr3sPATwG4rJMRPAgI_-2yyAo8yfMCad8gCiXrCw2T7Zu8i7BKKTc6l-cyjueci49TCRYUi1OqP8g5_6zr9aizHDnUBCmm-T6J3_WTw8at254d3rsq54BKaF3sX6A6TcVsqvJt_ZdMBOLd-yxs_CcQ3IMP7smoGmR4_sbyJdGRACK5HAbLOgYavkwfIeZq1OraLoPIhhS4VBXuRvJt2UWWwZc9m6v1SeMDu9eOP1lSVk8P7G2-m174dX9ej2aknvn2gGoaeop0yWO65aJfNqMYWYEn_XPKv1IVPDB1nK3e72_rjz-YEqOfoMhr4Q",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{token}}.eyJpZCI6MjEsInR5cGUiOiJjb25zdWx0YW50IiwidXNlcm5hbWUiOiJ0ZXN0MSJ9.NtZJEOV4gUojHaSs-zwgnaWEHx04f3ka5uYnFd8kgyw",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/me/cases",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"me",
+								"cases"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "My Assets",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJraWQiOiJCdVlsTFdBOWpsYVU5MWszYWlTOG8yWHZYbnFQRlZ0RGNkSGdNR1FHV0ZFPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiJjYjdjOWFhOC1jZWI4LTQzMDktYThkMy1mNDI1ODE5N2M2M2EiLCJjb2duaXRvOmdyb3VwcyI6WyJzdGFmZiIsImlhYWRtaW4iLCJncm91cF9oeXBlcmlvbiJdLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiaXNzIjoiaHR0cHM6XC9cL2NvZ25pdG8taWRwLmV1LW5vcnRoLTEuYW1hem9uYXdzLmNvbVwvZXUtbm9ydGgtMV9qb29MZ283ZkgiLCJjb2duaXRvOnVzZXJuYW1lIjoiZGVlbiIsImdpdmVuX25hbWUiOiJkZWVuIiwib3JpZ2luX2p0aSI6Ijk4Y2IwZGUwLWRjNDQtNDgwNC1hNWM3LTk5YjcyM2Y2MGM2ZSIsImF1ZCI6IjI3ZzlvbTA4Nmc5anRqMjdzZG9udHA5MWIwIiwiZXZlbnRfaWQiOiJiNGRmYjdlYi02ZGE2LTQyYjMtYWMyNS1jMWU4MjExNzgzYzEiLCJ0b2tlbl91c2UiOiJpZCIsImF1dGhfdGltZSI6MTYzMzQ5MTgyMCwibmFtZSI6ImRlZW4gaCIsImV4cCI6MTYzMzQ5NTQyMCwiY3VzdG9tOnJvbGUiOiIxIiwiaWF0IjoxNjMzNDkxODIwLCJmYW1pbHlfbmFtZSI6ImgiLCJqdGkiOiJhYTI1YmFjOC0zNGM4LTRiNDAtODY1OC0wMjU5MDRjMjQ4OGMiLCJlbWFpbCI6InBhbmRvcmF0b29sYm94QGdtYWlsLmNvbSJ9.uED42_pvqJT4dXGYPpd-SCkdq0mr3sPATwG4rJMRPAgI_-2yyAo8yfMCad8gCiXrCw2T7Zu8i7BKKTc6l-cyjueci49TCRYUi1OqP8g5_6zr9aizHDnUBCmm-T6J3_WTw8at254d3rsq54BKaF3sX6A6TcVsqvJt_ZdMBOLd-yxs_CcQ3IMP7smoGmR4_sbyJdGRACK5HAbLOgYavkwfIeZq1OraLoPIhhS4VBXuRvJt2UWWwZc9m6v1SeMDu9eOP1lSVk8P7G2-m174dX9ej2aknvn2gGoaeop0yWO65aJfNqMYWYEn_XPKv1IVPDB1nK3e72_rjz-YEqOfoMhr4Q",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{token}}.eyJpZCI6MjEsInR5cGUiOiJjb25zdWx0YW50IiwidXNlcm5hbWUiOiJ0ZXN0MSJ9.NtZJEOV4gUojHaSs-zwgnaWEHx04f3ka5uYnFd8kgyw",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/me/assets",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"me",
+								"assets"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "My Incidents",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJraWQiOiJCdVlsTFdBOWpsYVU5MWszYWlTOG8yWHZYbnFQRlZ0RGNkSGdNR1FHV0ZFPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiJjYjdjOWFhOC1jZWI4LTQzMDktYThkMy1mNDI1ODE5N2M2M2EiLCJjb2duaXRvOmdyb3VwcyI6WyJzdGFmZiIsImlhYWRtaW4iLCJncm91cF9oeXBlcmlvbiJdLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiaXNzIjoiaHR0cHM6XC9cL2NvZ25pdG8taWRwLmV1LW5vcnRoLTEuYW1hem9uYXdzLmNvbVwvZXUtbm9ydGgtMV9qb29MZ283ZkgiLCJjb2duaXRvOnVzZXJuYW1lIjoiZGVlbiIsImdpdmVuX25hbWUiOiJkZWVuIiwib3JpZ2luX2p0aSI6Ijk4Y2IwZGUwLWRjNDQtNDgwNC1hNWM3LTk5YjcyM2Y2MGM2ZSIsImF1ZCI6IjI3ZzlvbTA4Nmc5anRqMjdzZG9udHA5MWIwIiwiZXZlbnRfaWQiOiJiNGRmYjdlYi02ZGE2LTQyYjMtYWMyNS1jMWU4MjExNzgzYzEiLCJ0b2tlbl91c2UiOiJpZCIsImF1dGhfdGltZSI6MTYzMzQ5MTgyMCwibmFtZSI6ImRlZW4gaCIsImV4cCI6MTYzMzQ5NTQyMCwiY3VzdG9tOnJvbGUiOiIxIiwiaWF0IjoxNjMzNDkxODIwLCJmYW1pbHlfbmFtZSI6ImgiLCJqdGkiOiJhYTI1YmFjOC0zNGM4LTRiNDAtODY1OC0wMjU5MDRjMjQ4OGMiLCJlbWFpbCI6InBhbmRvcmF0b29sYm94QGdtYWlsLmNvbSJ9.uED42_pvqJT4dXGYPpd-SCkdq0mr3sPATwG4rJMRPAgI_-2yyAo8yfMCad8gCiXrCw2T7Zu8i7BKKTc6l-cyjueci49TCRYUi1OqP8g5_6zr9aizHDnUBCmm-T6J3_WTw8at254d3rsq54BKaF3sX6A6TcVsqvJt_ZdMBOLd-yxs_CcQ3IMP7smoGmR4_sbyJdGRACK5HAbLOgYavkwfIeZq1OraLoPIhhS4VBXuRvJt2UWWwZc9m6v1SeMDu9eOP1lSVk8P7G2-m174dX9ej2aknvn2gGoaeop0yWO65aJfNqMYWYEn_XPKv1IVPDB1nK3e72_rjz-YEqOfoMhr4Q",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{token}}.eyJpZCI6MjEsInR5cGUiOiJjb25zdWx0YW50IiwidXNlcm5hbWUiOiJ0ZXN0MSJ9.NtZJEOV4gUojHaSs-zwgnaWEHx04f3ka5uYnFd8kgyw",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}me/incidents",
+							"host": [
+								"{{baseUrl}}me"
+							],
+							"path": [
+								"incidents"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

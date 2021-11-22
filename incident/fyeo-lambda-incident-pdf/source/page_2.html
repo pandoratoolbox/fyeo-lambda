@@ -1,0 +1,131 @@
+<html>
+    <div class="doc">
+        <div class="header"><div class="header-logo"></div>Incident report</div>
+<div class="content">
+    <div class="content-recommendations">
+        <div class="content-recommendations-title">
+            Recommendations
+        </div>
+        <div class="content-recommendations-data">
+            {{recommendations}}
+        </div>
+    </div>
+    {{events}}
+</div>
+<div class="footer">{{today_date}}</div>
+</div>
+</html>
+
+<style>
+      .doc {
+    width: 595px;
+    height: 842px;
+  }
+  .header {
+    padding-top: 21px;
+    padding-bottom: 15px;
+    padding-left: 42px;
+    background: linear-gradient(95.18deg, #3ead40 12.45%, #f9c704 96.55%);
+    color: rgb(255, 255, 255);
+    font-size: 24px;
+    font-weight: 700;
+  }
+  .header-logo {
+    height: 24px;
+    width: 83px;
+    background-size: cover;
+    background-image: url("images/logo.svg");
+    margin-bottom: 5px;
+  }
+.content {
+    padding-left: 35px;
+    padding-right: 35px;
+    margin-top: 32px;
+}
+.content-recommendations-title {
+    font-weight: 700;
+    font-size: 18px;
+}
+.content-recommendations-data {
+    font-weight: 400;
+    font-size: 12px;
+    margin-top: 8px;
+}
+
+.content-events {
+    margin-top: 32px;
+    margin-bottom: 32px;
+}
+
+.content-events-title {
+    font-weight: 700;
+    font-size: 18px;
+}
+
+.content-events-data-first {
+    display: flex;
+    flex-direction: row;
+    margin-top: 16px;
+    padding-top: 16px;
+    padding-bottom: 16px;
+    padding-left: 16px;
+    padding-right: 16px;
+    margin-bottom: 10px;
+    background: #F8F9FB;
+border-radius: 4px;
+align-items: center;
+font-size: 12px;
+}
+
+.content-events-data {
+    display: flex;
+    flex-direction: row;
+    padding-top: 16px;
+    padding-bottom: 16px;
+    padding-left: 16px;
+    padding-right: 16px;
+    width: 524px;
+    margin-bottom: 10px;
+    background: #F8F9FB;
+border-radius: 4px;
+align-items: center;
+}
+
+.content-events-data-icon {
+    display: flex;
+    flex-direction: column;
+    width: 45px;
+    height: 45px;
+    background: #C4C4C4;
+border-radius: 2px;
+margin-right: 16px;
+}
+
+.content-events-data-value {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 2;
+    font-weight: 500;
+}
+
+.content-events-data-date {
+    display: flex;
+    flex-direction: column;
+}
+
+.content-events-data-cta {
+    
+}
+
+.footer {
+      display: flex;
+      flex-direction: row;
+    padding-left: 17px;
+        height: 33px;
+    background: linear-gradient(95.18deg, #3ead40 12.45%, #f9c704 96.55%);
+    color: rgb(255, 255, 255);
+    font-size: 12px;
+    font-weight: 500;
+    align-items: center;
+  }
+</style>

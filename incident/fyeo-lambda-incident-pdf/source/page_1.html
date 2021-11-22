@@ -1,0 +1,319 @@
+<html>
+  <div class="doc">
+    <div class="header"><div class="header-logo"></div>Incident report</div>
+    <div class="content">
+      <div class="content-title">
+{{title}}
+      </div>
+      <div class="content-summary">
+{{summary}}
+      </div>
+      <div class="content-data">
+        <div class="content-data-fields">
+          <div class="content-data-fields-row-first">
+            <div class="content-data-fields-row-name">Case</div>
+            <div class="content-data-fields-row-value">
+{{case_name}}
+            </div>
+          </div>
+          <div class="content-data-fields-row">
+            <div class="content-data-fields-row-name">Incident Type</div>
+            <div class="content-data-fields-row-value">
+              {{type}}
+            </div>
+          </div>
+          <div class="content-data-fields-row">
+            <div class="content-data-fields-row-name">Date</div>
+            <div class="content-data-fields-row-value">{{date}}</div>
+          </div>
+          <div class="content-data-fields-row">
+            <div class="content-data-fields-row-name">Source</div>
+            <div class="content-data-fields-row-value">{{source}}</div>
+          </div>
+          <div class="content-data-fields-row">
+            <div class="content-data-fields-row-name">Status</div>
+            <div class="content-data-fields-row-value">{{status}}</div>
+          </div>
+        </div>
+        <div class="content-data-severity">
+          <div class="content-data-severity-icon-{{severity_level}}"></div>
+          <div class="content-data-severity-text">{{severity_level}}</div>
+        </div>
+      </div>
+      {{threat_actor}}
+      {{targets}}
+      <div class="content-cta">
+          <div class="content-cta-button">
+           <a href="https://google.com"><div class="content-cta-button-text">View Incident in Portal</div></a>
+          </div>
+      </div>
+    </div>
+
+    <div class="footer">{{today_date}}</div>
+  </div>
+</html>
+
+<style>
+  a, a:link, a:visited, a:active, a:hover {
+    text-decoration: none;
+    border:0!important;
+  }
+  .doc {
+    width: 595px;
+    height: 842px;
+  }
+  .header {
+    padding-top: 21px;
+    padding-bottom: 15px;
+    padding-left: 42px;
+    background: linear-gradient(95.18deg, #3ead40 12.45%, #f9c704 96.55%);
+    color: rgb(255, 255, 255);
+    font-size: 24px;
+    font-weight: 700;
+  }
+  .header-logo {
+    height: 24px;
+    width: 83px;
+    background-size: cover;
+    background-image: url("images/logo.svg");
+    margin-bottom: 5px;
+  }
+  .content {
+    padding-left: 35px;
+    padding-right: 35px;
+    padding-top: 25px;
+    padding-bottom: 28px;
+  }
+
+  .content-title {
+    color: rgb(0, 0, 0);
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .content-summary {
+    margin-top: 8px;
+    font-weight: 400;
+    font-size: 12px;
+  }
+
+  .content-data {
+    margin-top: 24px;
+    display: flex;
+    flex-direction: row;
+  }
+
+  .content-data-fields {
+    display: flex;
+    flex-direction: column;
+    border-radius: 5px;
+    padding-left: 24px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    background: #f8f9fb;
+    width: 414px;
+  }
+
+  .content-data-fields-row-first {
+    font-size: 12px;
+    font-weight: 400;
+    display: flex;
+    flex-direction: row;
+  }
+
+  .content-data-fields-row {
+    font-size: 12px;
+    font-weight: 400;
+    display: flex;
+    flex-direction: row;
+    margin-top: 4px;
+  }
+
+  .content-data-fields-row-name {
+    display: flex;
+    flex-direction: column;
+    font-weight: 600;
+    width: 30%;
+  }
+
+  .content-data-fields-row-value {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .content-data-severity {
+    display: flex;
+    flex-direction: column;
+    border-radius: 5px;
+    width: 106px;
+    height: 111px;
+    background: #f8f9fb;
+    margin-left: 12px;
+    justify-content: center;
+    align-items: center;
+    margin-top: 4px;
+  }
+
+  .content-data-severity-icon-{{severity_level}} {
+    width: 37px;
+    height: 37px;
+    background-size: cover;
+    background-image: url("images/severity_{{severity_level}}.svg");
+  }
+
+  .content-data-severity-text {
+    text-transform: capitalize;
+    margin-top: 4px;
+    font-weight: 400;
+    font-size: 12px;
+  }
+
+  .content-threat-actor {
+    margin-top: 12px;
+  }
+
+  .content-threat-actor-title {
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .content-threat-actor-field {
+    margin-top: 2px;
+    background: #f8f9fb;
+    height: 36px;
+    font-size: 12px;
+    flex-direction: row;
+    display: flex;
+    align-items: center;
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .content-threat-actor-field-icon {
+      width: 19px;
+      height: 19px;
+      background-image: url("images/domain_threat_actor.svg");
+      background-size: cover;
+      margin-right: 12px;
+  }
+
+  .content-targets {
+    margin-top: 14px;
+  }
+
+  .content-targets-title {
+    font-weight: 600;
+    font-size: 12px;
+  }
+
+  .content-targets-data {
+    margin-top: 2px;
+    background: #f8f9fb;
+    border-radius: 5px;
+    padding-left: 20px;
+    padding-right: 20px;
+    flex-direction: column;
+    display: flex;
+    padding-top: 13px;
+    padding-bottom: 13px;
+  }
+
+  .content-targets-data-row-first {
+    flex-direction: row;
+    display: flex;
+    align-items: center;
+    font-size: 12px;
+    vertical-align: baseline;
+  }
+
+  .content-targets-data-row {
+    flex-direction: row;
+    display: flex;
+    align-items: center;
+    font-size: 12px;
+    margin-top: 12px;
+
+  }
+
+  .content-targets-data-row-icon {
+      display: flex;
+      flex-direction: column;
+    width: 19px;
+      height: 19px;
+      background-image: url("images/person.svg");
+      background-size: cover;
+      margin-right: 12px;
+  }
+
+  .content-targets-data-row-name {
+    display: flex;
+      flex-direction: column;
+      width: 50%;
+  }
+
+  .content-targets-data-row-meta {
+    display: flex;
+      flex-direction: column;
+      flex-grow: 2;
+  }
+
+  .content-targets-data-row-cta {
+    display: flex;
+      flex-direction: column;
+      justify-self: flex-end;
+      align-self: flex-end;
+      align-items: center;
+      justify-content: center;
+      width: 14px;
+      height: 13px;
+      background-image: url("images/link_active.svg");
+      background-size: cover;
+      cursor: pointer;
+  }
+  .content-targets-data-row-cta-img {
+    width: 14px;
+      height: 13px;
+      background-image: url("images/link_active.svg");
+      background-size: cover;
+  }
+
+  .content-cta {
+      margin-top: 19px;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+  }
+
+  .content-cta-button {
+    background: #31ad34;
+    border: 2px solid #31ad34;
+    box-sizing: border-box;
+    border-radius: 2px;
+    height: 33px;
+    width: 198px;
+    justify-content: center;
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    font-size: 15px;
+  }
+
+  .content-cta-button-text {
+    color: #FFFFFF;
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .footer {
+      display: flex;
+      flex-direction: row;
+    padding-left: 17px;
+        height: 33px;
+    background: linear-gradient(95.18deg, #3ead40 12.45%, #f9c704 96.55%);
+    color: rgb(255, 255, 255);
+    font-size: 12px;
+    font-weight: 500;
+    align-items: center;
+  }
+</style>
