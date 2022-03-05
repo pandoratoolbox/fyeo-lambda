@@ -4,6 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"net/url"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -11,62 +14,14 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type Strings []string
-
-type Asset struct {
-	ID   string `json:"id" bson:"_id"`
-	Name struct {
-		Common string `json:"common" bson:"common"`
-	} `json:"name" bson:"name"`
-	AssetCreationDate time.Time     `json:"asset_creation_date" bson:"asset_creation_date"`
-	AssetType         string        `json:"asset_type" bson:"asset_type"`
-	CaseID            string        `json:"case_id" bson:"case_id"`
-	Urls              []interface{} `json:"urls" bson:"urls"`
-	Group             string        `json:"group"`
-	// Case              Case          `json:"case"`
-	CaseName string `json:"case_name"`
-}
-
-type Case struct {
-	ID       string `json:"id" bson:"_id"`
-	Name     string `json:"name" bson:"caseName"`
-	CaseType string `json:"case_type" bson:"caseType"`
-	Email    string `json:"email" bson:"caseEmail"`
-	Type     string `json:"type" bson:"type"`
-	Group    string `json:"group" bson:"group"`
-}
-
-type Incident struct {
-	//ZendeskTicketID string    `json:"zendesk_ticket_id" bson:"zendesk_ticket_id"`
-	ID              string    `json:"id" bson:"_id"`
-	Source          string    `json:"source" bson:"source"`
-	Title           string    `json:"title" bson:"title"`
-	Type            string    `json:"type" bson:"type"`
-	Severity        int64     `json:"severity" bson:"severity"`
-	AssetID         string    `json:"asset_id" bson:"asset_id"`
-	CaseID          string    `json:"case_id" bson:"parentId"`
-	Events          []string  `json:"events" bson:"events"` //array of event IDs
-	Description     string    `json:"description" bson:"description"`
-	Recommendations string    `json:"recommendations" bson:"recommendations"`
-	Targets         []string  `json:"targets" bson:"targets"`
-	Group           string    `json:"group" bson:"group"`
-	ReportedDate    time.Time `json:"reported_date" bson:"reported_date"`
-	ClosedDate      time.Time `json:"closed_date" bson:"closed_date"`
-	ClassifiedDate  time.Time `json:"classified_date" bson:"classified_date"`
-	Date            time.Time `json:"date" bson:"date"`
-	Active          bool      `json:"active" bson:"active"`
-	Reported        bool      `json:"reported" bson:"reported"`
-	// Case              Case          `json:"case"`
-	// Asset Asset json:"asset"
-	AssetName string `json:"asset_name"`
-	CaseName  string `json:"case_name"`
-}
-
 var (
+	groups      []string
+	gMap        = make(map[string]bool)
 	MongoClient *mongo.Client
 
 	defaultHeaders = map[string]string{
@@ -78,12 +33,193 @@ var (
 	}
 )
 
+type Strings []string
+
+type Case struct {
+	ID           *string  `json:"id,omitempty" bson:"_id,omitempty"`
+	Name         *string  `json:"name,omitempty" bson:"name,omitempty"`
+	Evidence     *bool    `json:"evidence,omitempty" bson:"evidence,omitempty"` //not sure what this is for?
+	Emails       *Strings `json:"emails,omitempty" bson:"emails,omitempty"`
+	AlertLevel   *int64   `json:"alert_level,omitempty" bson:"alert_level,omitempty"`
+	Group        *string  `json:"group,omitempty" bson:"group,omitempty"`
+	ShouldNotify *bool    `json:"should_notify,omitempty" bson:"should_notify,omitempty"`
+}
+
+type Incident struct {
+	ID           *string    `json:"id,omitempty" bson:"_id,omitempty"`
+	Title        *string    `json:"title,omitempty" bson:"title,omitempty"`
+	CaseName     *string    `json:"case_name,omitempty" bson:"case_name,omitempty"`
+	Type         *string    `json:"type,omitempty" bson:"type,omitempty"`
+	ClassifiedBy *string    `json:"classified_by,omitempty" bson:"classified_by,omitempty"`
+	ClassifiedAt *time.Time `json:"classified_at,omitempty" bson:"classified_at,omitempty"`
+	ClosedAt     *time.Time `json:"closed_at,omitempty" bson:"closed_at,omitempty"`
+
+	Description *string `json:"description,omitempty" bson:"description,omitempty"` //used for summary?
+
+	Recommendations *string `json:"recommendations,omitempty" bson:"recommendations,omitempty"`
+
+	CreatedAt      *time.Time `json:"created_at,omitempty" bson:"created_at,omitempty"`
+	CaseID         *string    `json:"case_id,omitempty" bson:"case_id,omitempty"`
+	AssetID        *string    `json:"asset_id,omitempty" bson:"asset_id,omitempty"`
+	ThreatActors   []*Asset   `json:"threat_actors,omitempty" bson:"-"`
+	ThreatActorIDs *Strings   `json:"threat_actor_ids,omitempty" bson:"threat_actor_ids,omitempty"`
+	Source         *string    `json:"source,omitempty" bson:"source,omitempty"`
+	SourceType     *string    `json:"source_type,omitempty" bson:"source_type,omitempty"` //default to clear-net
+	Severity       *int64     `json:"severity,omitempty" bson:"severity,omitempty"`
+	TargetIDs      *Strings   `json:"target_ids,omitempty" bson:"target_ids,omitempty"`
+	TargetAssets   []*Asset   `json:"target_assets,omitempty" bson:"-"`
+	Agent          *string    `json:"agent,omitempty" bson:"agent,omitempty"`
+	IsActive       *bool      `json:"is_active,omitempty" bson:"is_active,omitempty"`
+	IsReported     *bool      `json:"is_reported,omitempty" bson:"is_reported,omitempty"`
+	EventIDs       *Strings   `json:"event_ids,omitempty" bson:"event_ids,omitempty"`
+	Events         []*Event   `json:"events,omitempty" bson:"-"`
+}
+
+type AssetNetloc struct {
+	Cidr     *string `json:"cidr,omitempty" bson:"cidr,omitempty"`
+	AsNumber *string `json:"as_number,omitempty" bson:"as_number,omitempty"`
+}
+
+type AssetWhois struct {
+	Domain      *string    `json:"domain,omitempty" bson:"domain,omitempty"`
+	CreatedAt   *time.Time `json:"created_at,omitempty" bson:"created_at,omitempty"`
+	UpdatedAt   *time.Time `json:"updated_at,omitempty" bson:"updated_at,omitempty"`
+	ExpiresAt   *time.Time `json:"expires_at,omitempty" bson:"expires_at,omitempty"`
+	Registrar   *string    `json:"registrar,omitempty" bson:"registrar,omitempty"`
+	Registrant  *string    `json:"registrant,omitempty" bson:"registrant,omitempty"`
+	Nameservers *Strings   `json:"nameservers,omitempty" bson:"names_servers,omitempty"`
+	Status      *string    `json:"status,omitempty" bson:"status,omitempty"`
+}
+
+type AssetLocation struct {
+	StreetNumber *int64   `json:"street_number,omitempty" bson:"street_number,omitempty"`
+	PostalTown   *string  `json:"postal_town,omitempty" bson:"postal_town,omitempty"`
+	Country      *string  `json:"country,omitempty" bson:"country,omitempty"`
+	StreetName   *string  `json:"street_name,omitempty" bson:"street_name,omitempty"`
+	Premise      *string  `json:"premise,omitempty" bson:"premise,omitempty"`
+	Lat          *float64 `json:"lat,omitempty" bson:"lat,omitempty"`
+	Lng          *float64 `json:"lng,omitempty" bson:"lng,omitempty"`
+}
+
+type AssetName struct {
+	Common *string `json:"common,omitempty" bson:"common,omitempty"`
+	First  *string `json:"first,omitempty" bson:"first,omitempty"`
+	Last   *string `json:"last,omitempty" bson:"last,omitempty"`
+	Middle *string `json:"middle,omitempty" bson:"middle,omitempty"`
+	Nick   *string `json:"nick,omitempty" bson:"nick,omitempty"`
+}
+
+type AssetOrganization struct {
+	Role *string `json:"role,omitempty" bson:"role,omitempty"`
+	Name *string `json:"name,omitempty" bson:"name,omitempty"`
+}
+
+type Asset struct {
+	CaseName          *string      `json:"case_name,omitempty" bson:"-"`
+	ID                *string      `json:"id,omitempty" bson:"_id,omitempty"`
+	CaseID            *string      `json:"case_id,omitempty" bson:"case_id,omitempty"`
+	SocialMedia       []*TagPair   `json:"social_media,omitempty" bson:"social_media,omitempty"`
+	IPs               *Strings     `json:"ips,omitempty" bson:"ips,omitempty"`
+	Name              *AssetName   `json:"name,omitempty" bson:"name,omitempty"`
+	Netloc            *AssetNetloc `json:"netloc,omitempty" bson:"netloc,omitempty"`
+	CreatedAt         *time.Time   `json:"created_at,omitempty" bson:"created_at,omitempty"`
+	DumpSearchedAt    *time.Time   `json:"dump_searched_at,omitempty" bson:"dump_searched_at,omitempty"`
+	SimilarSearchedAt *time.Time   `json:"similar_searched_at,omitempty" bson:"similar_searched_at,omitempty"`
+	UpdatedAt         *time.Time   `json:"updated_at,omitempty" bson:"updated_at,omitempty"`
+	IndexCount        *int64       `json:"index_count,omitempty" bson:"index_count,omitempty"`
+	SearchedAt        *time.Time   `json:"searched_at,omitempty" bson:"searched_at,omitempty"`
+	IconURL           *string      `json:"icon_url,omitempty" bson:"icon_url,omitempty"`
+
+	RequiredScore   *float64           `json:"required_score,omitempty" bson:"required_score,omitempty"`
+	Type            *string            `json:"type,omitempty" bson:"type,omitempty"`
+	IsActive        *bool              `json:"is_active,omitempty" bson:"is_active,omitempty"`
+	IsThreatActor   *bool              `json:"is_threat_actor,omitempty" bson:"is_threat_actor,omitempty"`
+	Location        *AssetLocation     `json:"location,omitempty" bson:"location,omitempty"`
+	Organization    *AssetOrganization `json:"organization,omitempty" bson:"organization,omitempty"`
+	Emails          []*TagPair         `json:"emails,omitempty" bson:"emails,omitempty"`
+	PhoneNumbers    []*TagPair         `json:"phone_numbers,omitempty" bson:"phone_numbers,omitempty"`
+	WalletAddresses []*TagPair         `json:"wallet_addresses,omitempty" bson:"wallet_addresses,omitempty"`
+	Urls            *Strings           `json:"urls,omitempty" bson:"urls,omitempty"`
+
+	//domain
+	Whois *AssetWhois `json:"whois,omitempty" bson:"whois,omitempty"`
+	Mx    *Strings    `json:"mx,omitempty" bson:"mx,omitempty"`
+	Ns    *Strings    `json:"ns,omitempty" bson:"ns,omitempty"`
+
+	//person
+	Brands *Strings `json:"brands,omitempty" bson:"brands,omitempty"`
+
+	IncidentCount *int64 `json:"incident_count,omitempty" bson:"-"`
+}
+
+type TagPair struct {
+	Tag   *string `json:"tag,omitempty" bson:"tag,omitempty"`
+	Value *string `json:"value,omitempty" bson:"value,omitempty"`
+}
+
+type Event struct {
+	ID                *string    `json:"id,omitempty" bson:"_id,omitempty"`
+	CaseID            *string    `json:"case_id" bson:"case_id,omitempty"`
+	AssetID           *string    `json:"asset_id,omitempty" bson:"asset_id,omitempty"`
+	IncidentID        *string    `json:"incident_id,omitempty" bson:"incident_id,omitempty"`
+	Url               *string    `json:"url,omitempty" bson:"url,omitempty"`
+	Title             *string    `json:"title,omitempty" bson:"title,omitempty"`
+	SourceType        *string    `json:"source_type,omitempty" bson:"source_type,omitempty"`
+	SourceContentType *string    `json:"source_content_type,omitempty" bson:"source_content_type,omitempty"`
+	SourceNetwork     *string    `json:"source_network,omitempty" bson:"source_network,omitempty"`
+	Type              *string    `json:"type,omitempty" bson:"type,omitempty"`
+	Site              *string    `json:"site,omitempty" bson:"site,omitempty"`
+	ThreatLevel       *int64     `json:"threat_level,omitempty" bson:"threat_level,omitempty"`
+	CreatedAt         *time.Time `json:"created_at,omitempty" bson:"created_at,omitempty"`
+	ConfidenceScore   *int64     `json:"confidence_score,omitempty" bson:"confidence_score,omitempty"`
+}
+
+type ErrorResponse struct {
+	Code    int    `json:"code,omitempty"`
+	Message string `json:"message,omitempty"`
+}
+
+func (data Asset) GetName() string {
+	var name string
+	if data.Name.Common != nil {
+		name = *data.Name.Common
+	} else {
+		if data.Name.Last != nil {
+			name = *data.Name.Last
+		}
+
+		if data.Name.Middle != nil {
+			name += " " + *data.Name.Middle
+		}
+
+		if data.Name.First != nil {
+			name += " " + *data.Name.First
+		}
+	}
+
+	return name
+}
+
+func ServeError(message string, code int) events.APIGatewayProxyResponse {
+	js, _ := json.Marshal(ErrorResponse{
+		Code:    code,
+		Message: message,
+	})
+
+	return events.APIGatewayProxyResponse{
+		StatusCode: code,
+		Body:       string(js),
+		Headers:    defaultHeaders,
+	}
+}
+
 func main() {
 	lambda.Start(Handler)
 }
 
 func Init() error {
 	var err error
+
 	err = ReuseMongo()
 	if err != nil {
 		return err
@@ -92,16 +228,31 @@ func Init() error {
 	return err
 }
 
+func UrlEncoded(str string) (string, error) {
+	u, err := url.Parse(str)
+	if err != nil {
+		return "", err
+	}
+	return u.String(), nil
+}
+
 func ReuseMongo() error {
+
 	if MongoClient != nil {
 		return nil
 	} else {
 		var err error
+		username := "stage"
+		password := "GK!2f&Wf#z&RS3"
+
+		password, err = UrlEncoded(password)
+		if err != nil {
+			return err
+		}
+
 		ctx := context.Background()
 
-		uri := "mongodb://192.168.0.229:27017"
-
-		MongoClient, err = mongo.Connect(ctx, options.Client().ApplyURI(uri))
+		MongoClient, err = mongo.Connect(ctx, options.Client().ApplyURI(fmt.Sprintf("mongodb://%s:%s@192.168.0.17:27017/?authSource=admin&ssl=false", username, password)))
 		if err != nil {
 			return err
 		}
@@ -110,99 +261,854 @@ func ReuseMongo() error {
 	return nil
 }
 
-func Handler(rctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	var err error
-	ctx, cancel := context.WithTimeout(context.Background(), 14*time.Second)
-	defer cancel()
+func IsEmpty(input interface{}) bool {
+	v := reflect.ValueOf(input)
+	if v.IsZero() {
+		return true
+	}
+
+	if v.Kind() == reflect.Ptr {
+		if v.Elem().IsZero() {
+			return true
+		}
+
+	}
+
+	return false
+}
+
+func StructToBsonMap(input interface{}) (bson.M, error) {
+	b, err := bson.Marshal(input)
+	if err != nil {
+		return bson.M{}, err
+	}
+	var data bson.M
+	err = bson.Unmarshal(b, &data)
+	if err != nil {
+		return bson.M{}, err
+	}
+
+	delete(data, "_id")
+
+	return data, nil
+}
+
+func GetCase(id string) (Case, error) {
+	var out Case
+	o_id, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return out, err
+	}
+
+	filter := bson.M{"_id": o_id, "is_archived": bson.M{"$ne": true}}
+	res := MongoClient.Database("fyeo-di").Collection("cases").FindOne(context.Background(), filter)
+
+	if res.Err() != nil {
+		return out, res.Err()
+	}
+
+	err = res.Decode(&out)
+
+	if err != nil {
+
+		return out, err
+	}
+
+	return out, nil
+}
+
+func GetCases(filter bson.M) ([]Case, error) {
+	var out []Case
+
+	filter["is_archived"] = bson.M{"$ne": true}
+
+	res, err := MongoClient.Database("fyeo-di").Collection("cases").Find(context.Background(), filter)
+
+	if err != nil {
+		return out, err
+	}
+
+	for res.Next(context.Background()) {
+		var doc Case
+		err := res.Decode(&doc)
+		if err != nil {
+			return out, err
+		}
+		out = append(out, doc)
+	}
+
+	return out, nil
+}
+
+func UpdateCase(id string, data Case) error {
+
+	if IsEmpty(data) {
+		return errors.New("Invalid input")
+	}
+
+	if data.Group != nil {
+
+		_, ok := gMap[*data.Group]
+
+		if !ok {
+			return errors.New("Unable to verify group permissions")
+		}
+
+	}
+
+	current, err := GetCase(id)
+
+	if err != nil {
+		return err
+	}
+
+	if current.Group == nil {
+		js, _ := json.Marshal(current)
+		return errors.New(fmt.Sprintf("No group found for object: %s", string(js)))
+	}
+
+	_, ok := gMap[*current.Group]
+
+	if !ok {
+		return errors.New("Unable to verify group permissions")
+	}
+
+	update_data, err := StructToBsonMap(data)
+	if err != nil {
+		return err
+	}
+
+	update := bson.M{"$set": update_data}
+	o_id, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
+
+	filter := bson.M{"_id": o_id}
+	res, err := MongoClient.Database("fyeo-di").Collection("cases").UpdateOne(context.Background(), filter, update)
+
+	if err != nil {
+		return err
+	}
+
+	if res.MatchedCount < 1 {
+		return errors.New("Unable to find the object to update")
+	}
+
+	return nil
+}
+
+func NewCase(data *Case) error {
+
+	if IsEmpty(data) {
+		return errors.New("Invalid input")
+	}
+
+	if data.Group != nil {
+
+		_, ok := gMap[*data.Group]
+
+		if !ok {
+			return errors.New("Unable to verify group permissions")
+		}
+
+	} else {
+		return errors.New("Object must contain group")
+	}
+
+	insert_data, err := StructToBsonMap(*data)
+	if err != nil {
+		return err
+	}
+
+	res, err := MongoClient.Database("fyeo-di").Collection("cases").InsertOne(context.Background(), insert_data)
+	if err != nil {
+		return err
+	}
+
+	nid := res.InsertedID.(primitive.ObjectID).Hex()
+
+	data.ID = &nid
+
+	return nil
+}
+
+func DeleteCase(id string) error {
+
+	update := bson.M{"$set": bson.M{"is_archived": true}}
+	o_id, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
+
+	filter := bson.M{"_id": o_id}
+	res, err := MongoClient.Database("fyeo-di").Collection("cases").UpdateOne(context.Background(), filter, update)
+
+	if err != nil {
+		return err
+	}
+
+	if res.MatchedCount < 1 {
+		return errors.New("Unable to find the object to archive")
+	}
+
+	return nil
+}
+
+func GetIncident(id string) (Incident, error) {
+	var out Incident
+	o_id, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return out, err
+	}
+
+	filter := bson.M{"_id": o_id}
+	filter["is_archived"] = bson.M{"$ne": true}
+
+	res := MongoClient.Database("fyeo-di").Collection("incidents").FindOne(context.Background(), filter)
+
+	if res.Err() != nil {
+		return out, res.Err()
+	}
+
+	err = res.Decode(&out)
+
+	if err != nil {
+		return out, err
+	}
+
+	return out, nil
+}
+
+func GetIncidents(filter bson.M) ([]Incident, error) {
+	var out []Incident
+
+	filter["is_archived"] = bson.M{"$ne": true}
+
+	res, err := MongoClient.Database("fyeo-di").Collection("incidents").Find(context.Background(), filter)
+
+	if err != nil {
+		return out, err
+	}
+
+	for res.Next(context.Background()) {
+		var doc Incident
+		err := res.Decode(&doc)
+		if err != nil {
+			return out, err
+		}
+		out = append(out, doc)
+	}
+
+	return out, nil
+}
+
+func GetIncidentsIDs(filter bson.M) ([]Incident, error) {
+	var out []Incident
+
+	filter["is_archived"] = bson.M{"$ne": true}
+
+	res, err := MongoClient.Database("fyeo-di").Collection("incidents").Find(context.Background(), filter, options.Find().SetProjection(bson.M{"_id": 1}))
+
+	if err != nil {
+		return out, err
+	}
+
+	for res.Next(context.Background()) {
+		var doc Incident
+		err := res.Decode(&doc)
+		if err != nil {
+			return out, err
+		}
+		out = append(out, doc)
+	}
+
+	return out, nil
+}
+
+func GetIncidentsTargetIDs(filter bson.M) ([]Incident, error) {
+	var out []Incident
+
+	filter["is_archived"] = bson.M{"$ne": true}
+
+	res, err := MongoClient.Database("fyeo-di").Collection("incidents").Find(context.Background(), filter, options.Find().SetProjection(bson.M{"_id": 1, "target_ids": 1}))
+
+	if err != nil {
+		return out, err
+	}
+
+	for res.Next(context.Background()) {
+		var doc Incident
+		err := res.Decode(&doc)
+		if err != nil {
+			return out, err
+		}
+		out = append(out, doc)
+	}
+
+	return out, nil
+}
+
+func UpdateIncident(id string, data Incident) error {
+
+	if IsEmpty(data) {
+		return errors.New("Invalid input")
+	}
+
+	if data.CaseID != nil {
+		ica, err := GetCase(*data.CaseID)
+
+		if err != nil {
+			return err
+		}
+
+		if !CasePermissions(ica) {
+			return errors.New("Unable to verify case group permissions")
+		}
+	}
+
+	current, err := GetIncident(id)
+
+	if err != nil {
+		return err
+	}
+
+	if current.CaseID == nil {
+		js, _ := json.Marshal(current)
+		return errors.New(fmt.Sprintf("No case ID found for object: %s", string(js)))
+	}
+
+	ca, err := GetCase(*current.CaseID)
+
+	if err != nil {
+		return err
+	}
+
+	if !CasePermissions(ca) {
+		return errors.New("Unable to verify case group permissions")
+	}
+
+	update_data, err := StructToBsonMap(data)
+	if err != nil {
+		return err
+	}
+
+	update := bson.M{"$set": update_data}
+	o_id, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
+
+	filter := bson.M{"_id": o_id}
+	res, err := MongoClient.Database("fyeo-di").Collection("incidents").UpdateOne(context.Background(), filter, update)
+
+	if err != nil {
+		return err
+	}
+
+	if res.MatchedCount < 1 {
+		return errors.New("Unable to find the object to update")
+	}
+
+	return nil
+}
+
+func NewIncident(data *Incident) error {
+
+	if IsEmpty(data) {
+		return errors.New("Invalid input")
+	}
+
+	if data.CaseID != nil {
+		ica, err := GetCase(*data.CaseID)
+
+		if err != nil {
+			return err
+		}
+
+		if !CasePermissions(ica) {
+			return errors.New("Unable to verify case group permissions")
+		}
+
+	} else {
+		return errors.New("Object must contain case_id")
+	}
+
+	insert_data, err := StructToBsonMap(*data)
+	if err != nil {
+		return err
+	}
+
+	res, err := MongoClient.Database("fyeo-di").Collection("incidents").InsertOne(context.Background(), insert_data)
+	if err != nil {
+		return err
+	}
+
+	nid := res.InsertedID.(primitive.ObjectID).Hex()
+
+	data.ID = &nid
+
+	return nil
+}
+
+func DeleteIncident(id string) error {
+
+	update := bson.M{"$set": bson.M{"is_archived": true}}
+	o_id, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
+
+	filter := bson.M{"_id": o_id}
+	res, err := MongoClient.Database("fyeo-di").Collection("incidents").UpdateOne(context.Background(), filter, update)
+
+	if err != nil {
+		return err
+	}
+
+	if res.MatchedCount < 1 {
+		return errors.New("Unable to find the object to archive")
+	}
+
+	return nil
+}
+
+func GetAsset(id string) (Asset, error) {
+	var out Asset
+	o_id, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return out, err
+	}
+
+	filter := bson.M{"_id": o_id}
+	filter["is_archived"] = bson.M{"$ne": true}
+
+	res := MongoClient.Database("fyeo-di").Collection("assets").FindOne(context.Background(), filter)
+
+	if res.Err() != nil {
+		return out, res.Err()
+	}
+
+	err = res.Decode(&out)
+
+	if err != nil {
+
+		return out, err
+	}
+
+	return out, nil
+}
+
+func GetAssets(filter bson.M) ([]Asset, error) {
+	var out []Asset
+
+	filter["is_archived"] = bson.M{"$ne": true}
+
+	res, err := MongoClient.Database("fyeo-di").Collection("assets").Find(context.Background(), filter)
+
+	if err != nil {
+		return out, err
+	}
+
+	for res.Next(context.Background()) {
+		var doc Asset
+		err := res.Decode(&doc)
+		if err != nil {
+			return out, err
+		}
+		out = append(out, doc)
+	}
+
+	return out, nil
+}
+
+func UpdateAsset(id string, data Asset) error {
+
+	if IsEmpty(data) {
+		return errors.New("Invalid input")
+	}
+
+	if data.CaseID != nil {
+		ica, err := GetCase(*data.CaseID)
+
+		if err != nil {
+			return err
+		}
+
+		if !CasePermissions(ica) {
+			return errors.New("Unable to verify case group permissions")
+		}
+	}
+
+	current, err := GetAsset(id)
+
+	if err != nil {
+		return err
+	}
+
+	if current.CaseID == nil {
+		js, _ := json.Marshal(current)
+		return errors.New(fmt.Sprintf("No case ID found for object: %s", string(js)))
+	}
+
+	ca, err := GetCase(*current.CaseID)
+
+	if err != nil {
+		return err
+	}
+
+	if !CasePermissions(ca) {
+		return errors.New("Unable to verify case group permissions")
+	}
+
+	update_data, err := StructToBsonMap(data)
+	if err != nil {
+		return err
+	}
+
+	update := bson.M{"$set": update_data}
+	o_id, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
+
+	filter := bson.M{"_id": o_id}
+	res, err := MongoClient.Database("fyeo-di").Collection("assets").UpdateOne(context.Background(), filter, update)
+
+	if err != nil {
+		return err
+	}
+
+	if res.MatchedCount < 1 {
+		return errors.New("Unable to find the object to update")
+	}
+
+	return nil
+}
+
+func NewAsset(data *Asset) error {
+
+	if data.CaseID != nil {
+		ica, err := GetCase(*data.CaseID)
+
+		if err != nil {
+			return err
+		}
+
+		if !CasePermissions(ica) {
+			return errors.New("Unable to verify case group permissions")
+		}
+
+	} else {
+		return errors.New("Object must contain case_id")
+	}
+
+	insert_data, err := StructToBsonMap(*data)
+	if err != nil {
+		return err
+	}
+
+	res, err := MongoClient.Database("fyeo-di").Collection("assets").InsertOne(context.Background(), insert_data)
+	if err != nil {
+		return err
+	}
+
+	nid := res.InsertedID.(primitive.ObjectID).Hex()
+
+	data.ID = &nid
+
+	return nil
+}
+
+func DeleteAsset(id string) error {
+
+	update := bson.M{"$set": bson.M{"is_archived": true}}
+	o_id, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
+
+	filter := bson.M{"_id": o_id}
+	res, err := MongoClient.Database("fyeo-di").Collection("assets").UpdateOne(context.Background(), filter, update)
+
+	if err != nil {
+		return err
+	}
+
+	if res.MatchedCount < 1 {
+		return errors.New("Unable to find the object to archive")
+	}
+
+	return nil
+}
+
+func GetEvent(id string) (Event, error) {
+	var out Event
+	o_id, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return out, err
+	}
+
+	filter := bson.M{"_id": o_id}
+	filter["is_archived"] = bson.M{"$ne": true}
+
+	res := MongoClient.Database("fyeo-di").Collection("events").FindOne(context.Background(), filter)
+
+	if res.Err() != nil {
+		return out, res.Err()
+	}
+
+	err = res.Decode(&out)
+
+	if err != nil {
+
+		return out, err
+	}
+
+	return out, nil
+}
+
+func GetEvents(filter bson.M) ([]Event, error) {
+	var out []Event
+
+	filter["is_archived"] = bson.M{"$ne": true}
+
+	res, err := MongoClient.Database("fyeo-di").Collection("events").Find(context.Background(), filter)
+
+	if err != nil {
+		return out, err
+	}
+
+	for res.Next(context.Background()) {
+		var doc Event
+		err := res.Decode(&doc)
+		if err != nil {
+			return out, err
+		}
+		out = append(out, doc)
+	}
+
+	return out, nil
+}
+
+func UpdateEvent(id string, data Event) error {
+
+	if IsEmpty(data) {
+		return errors.New("Invalid input")
+	}
+
+	if data.CaseID != nil {
+		ica, err := GetCase(*data.CaseID)
+
+		if err != nil {
+			return err
+		}
+
+		if !CasePermissions(ica) {
+			return errors.New("Unable to verify case group permissions")
+		}
+	}
+
+	current, err := GetEvent(id)
+
+	if err != nil {
+		return err
+	}
+
+	if current.CaseID == nil {
+		js, _ := json.Marshal(current)
+		return errors.New(fmt.Sprintf("No case ID found for object: %s", string(js)))
+	}
+
+	ca, err := GetCase(*current.CaseID)
+
+	if err != nil {
+		return err
+	}
+
+	if !CasePermissions(ca) {
+		return errors.New("Unable to verify case group permissions")
+	}
+
+	update_data, err := StructToBsonMap(data)
+	if err != nil {
+		return err
+	}
+
+	update := bson.M{"$set": update_data}
+	o_id, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
+
+	filter := bson.M{"_id": o_id}
+	res, err := MongoClient.Database("fyeo-di").Collection("events").UpdateOne(context.Background(), filter, update)
+
+	if err != nil {
+		return err
+	}
+
+	if res.MatchedCount < 1 {
+		return errors.New("Unable to find the object to update")
+	}
+
+	return nil
+}
+
+func NewEvent(data *Event) error {
+
+	if IsEmpty(data) {
+		return errors.New("Invalid input")
+	}
+
+	if data.CaseID != nil {
+		ica, err := GetCase(*data.CaseID)
+
+		if err != nil {
+			return err
+		}
+
+		if !CasePermissions(ica) {
+			return errors.New("Unable to verify case group permissions")
+		}
+
+	} else {
+		return errors.New("Object must contain case_id")
+	}
+
+	insert_data, err := StructToBsonMap(*data)
+	if err != nil {
+		return err
+	}
+
+	res, err := MongoClient.Database("fyeo-di").Collection("events").InsertOne(context.Background(), insert_data)
+	if err != nil {
+		return err
+	}
+
+	nid := res.InsertedID.(primitive.ObjectID).Hex()
+
+	data.ID = &nid
+
+	return nil
+}
+
+func DeleteEvent(id string) error {
+
+	update := bson.M{"$set": bson.M{"is_archived": true}}
+	o_id, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
+
+	filter := bson.M{"_id": o_id}
+	res, err := MongoClient.Database("fyeo-di").Collection("events").UpdateOne(context.Background(), filter, update)
+
+	if err != nil {
+		return err
+	}
+
+	if res.MatchedCount < 1 {
+		return errors.New("Unable to find the object to archive")
+	}
+
+	return nil
+}
+
+func CasePermissions(input Case) bool {
+	if input.Group != nil {
+		_, ok := gMap[*input.Group]
+		return ok
+	}
+
+	return false
+}
+
+func VerifyRequest(request events.APIGatewayProxyRequest) error {
 
 	claims := request.RequestContext.Authorizer["claims"]
 	if claims == nil {
-		return events.APIGatewayProxyResponse{
-			StatusCode: 400,
-			Body:       errors.New("No claims found for " + request.RequestContext.Identity.CognitoIdentityID).Error(),
-			Headers:    defaultHeaders,
-		}, nil
+		return errors.New("No claims found for " + request.RequestContext.Identity.CognitoIdentityID)
 	}
 
 	rg := claims.(map[string]interface{})["cognito:groups"]
 
 	if rg == nil {
-		return events.APIGatewayProxyResponse{
-			StatusCode: 400,
-			Body:       errors.New("No group permissions set").Error(),
-			Headers:    defaultHeaders,
-		}, nil
+		return errors.New("No group permissions set")
 	}
 
-	groups := strings.Split(rg.(string), ",")
-	gMap := make(map[string]bool)
+	groups = strings.Split(rg.(string), ",")
+
 	for _, g := range groups {
 		gMap[g] = true
 	}
 
+	return nil
+}
+
+func Handler(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	var err error
+
+	err = VerifyRequest(request)
+	if err != nil {
+		return ServeError(err.Error(), 400), nil
+	}
+
 	err = Init()
 	if err != nil {
-		return events.APIGatewayProxyResponse{
-			StatusCode: 400,
-			Body:       err.Error(),
-			Headers:    defaultHeaders,
-		}, nil
+		return ServeError(err.Error(), 400), nil
 	}
 
-	filter := bson.M{"group": bson.M{"$in": groups}, "status": bson.M{"$ne": "archived"}}
-	res, err := MongoClient.Database("fyeo-di").Collection("cases").Find(ctx, filter)
+	filter := bson.M{"group": bson.M{"$in": groups}}
+	cases, err := GetCases(filter)
 	if err != nil {
-		return events.APIGatewayProxyResponse{
-			StatusCode: 400,
-			Body:       err.Error(),
-			Headers:    defaultHeaders,
-		}, nil
+		return ServeError(err.Error(), 400), nil
 	}
 
-	cases := make(map[string]Case)
 	var case_ids []string
-	for res.Next(ctx) {
-		var doc Case
-
-		err := res.Decode(&doc)
-		if err != nil {
-			return events.APIGatewayProxyResponse{
-				StatusCode: 400,
-				Body:       err.Error(),
-				Headers:    defaultHeaders,
-			}, nil
-		}
-
-		cases[doc.ID] = doc
-		case_ids = append(case_ids, doc.ID)
+	case_map := make(map[string]Case)
+	for _, c := range cases {
+		case_map[*c.ID] = c
+		case_ids = append(case_ids, *c.ID)
 	}
 
 	if len(cases) < 1 {
-		return events.APIGatewayProxyResponse{
-			StatusCode: 400,
-			Body:       errors.New("No cases found with provided group permissions").Error(),
-			Headers:    defaultHeaders,
-		}, nil
+		return ServeError("No cases found with provided group permissions", 400), nil
 	}
 
-	filter2 := bson.M{"case_id": bson.M{"$in": case_ids}, "status": bson.M{"$ne": "archived"}}
+	filter2 := bson.M{"case_id": bson.M{"$in": case_ids}}
 
 	q_kind, ok := request.QueryStringParameters["type"]
 	if ok {
-		filter2["asset_type"] = map[string]interface{}{
+		filter2["type"] = map[string]interface{}{
 			"$eq": q_kind,
 		}
+	}
+
+	q_cases, ok := request.QueryStringParameters["cases"]
+	if ok {
+		q_cases_arr := strings.Split(q_cases, ",")
+
+		if len(q_cases_arr) > 0 {
+			var cases_arr []string
+			for _, id := range q_cases_arr {
+				_, ok := case_map[id]
+				if ok {
+					cases_arr = append(cases_arr, id)
+				}
+			}
+			filter2["case_id"] = map[string]interface{}{
+				"$in": cases_arr,
+			}
+		}
+
 	}
 
 	q_threat_actor, ok := request.QueryStringParameters["threat_actor"]
 	if ok {
 		threat_actor, err := strconv.ParseBool(q_threat_actor)
 		if err != nil {
-			return events.APIGatewayProxyResponse{
-				StatusCode: 400,
-				Body:       err.Error(),
-				Headers:    defaultHeaders,
-			}, nil
+			return ServeError(err.Error(), 400), nil
 		}
 
 		filter2["is_threat_actor"] = map[string]interface{}{
@@ -214,14 +1120,10 @@ func Handler(rctx context.Context, request events.APIGatewayProxyRequest) (event
 	if ok {
 		active, err := strconv.ParseBool(q_active)
 		if err != nil {
-			return events.APIGatewayProxyResponse{
-				StatusCode: 400,
-				Body:       err.Error(),
-				Headers:    defaultHeaders,
-			}, nil
+			return ServeError(err.Error(), 400), nil
 		}
 
-		filter2["active"] = map[string]interface{}{
+		filter2["is_active"] = map[string]interface{}{
 			"$eq": active,
 		}
 	}
@@ -232,17 +1134,33 @@ func Handler(rctx context.Context, request events.APIGatewayProxyRequest) (event
 			"$regex":   ".*" + q_name + ".*",
 			"$options": "i",
 		}
+
+		// filter2["name.first"] = map[string]interface{}{
+		// 	"$regex":   ".*" + q_name + ".*",
+		// 	"$options": "i",
+		// }
+
+		// filter2["name.last"] = map[string]interface{}{
+		// 	"$regex":   ".*" + q_name + ".*",
+		// 	"$options": "i",
+		// }
+
+		// filter2["name.middle"] = map[string]interface{}{
+		// 	"$regex":   ".*" + q_name + ".*",
+		// 	"$options": "i",
+		// }
+
+		// filter2["name.nick"] = map[string]interface{}{
+		// 	"$regex":   ".*" + q_name + ".*",
+		// 	"$options": "i",
+		// }
 	}
 
 	q_score_min, ok := request.QueryStringParameters["score_min"]
 	if ok {
 		score_min, err := strconv.ParseFloat(q_score_min, 64)
 		if err != nil {
-			return events.APIGatewayProxyResponse{
-				StatusCode: 400,
-				Body:       err.Error(),
-				Headers:    defaultHeaders,
-			}, nil
+			return ServeError(err.Error(), 400), nil
 		}
 
 		filter2["required_score"] = map[string]interface{}{
@@ -254,11 +1172,7 @@ func Handler(rctx context.Context, request events.APIGatewayProxyRequest) (event
 	if ok {
 		score_max, err := strconv.ParseFloat(q_score_max, 64)
 		if err != nil {
-			return events.APIGatewayProxyResponse{
-				StatusCode: 400,
-				Body:       err.Error(),
-				Headers:    defaultHeaders,
-			}, nil
+			return ServeError(err.Error(), 400), nil
 		}
 
 		_, ok := filter["required_score"]
@@ -272,16 +1186,46 @@ func Handler(rctx context.Context, request events.APIGatewayProxyRequest) (event
 		}
 	}
 
+	q_date_from, ok := request.QueryStringParameters["date_from"]
+	if ok {
+		date_from, err := strconv.ParseInt(q_date_from, 10, 64)
+		if err != nil {
+			return ServeError(err.Error(), 400), nil
+		}
+
+		df_unix := time.Unix(date_from, 0)
+
+		filter2["created_at"] = map[string]interface{}{
+			"$gte": df_unix,
+		}
+	}
+
+	q_date_to, ok := request.QueryStringParameters["date_to"]
+	if ok {
+		date_to, err := strconv.ParseInt(q_date_to, 10, 64)
+		if err != nil {
+			return ServeError(err.Error(), 400), nil
+		}
+
+		dt_unix := time.Unix(date_to, 0)
+
+		_, ok := filter2["created_at"]
+		if ok {
+			filter2["created_at"].(map[string]interface{})["$lte"] = dt_unix
+		}
+		if !ok {
+			filter2["created_at"] = map[string]interface{}{
+				"$lte": dt_unix,
+			}
+		}
+	}
+
 	var incident_count_min int64
 	q_incident_count_min, ok := request.QueryStringParameters["incident_count_min"]
 	if ok {
 		incident_count_min, err = strconv.ParseInt(q_incident_count_min, 10, 64)
 		if err != nil {
-			return events.APIGatewayProxyResponse{
-				StatusCode: 400,
-				Body:       err.Error(),
-				Headers:    defaultHeaders,
-			}, nil
+			return ServeError(err.Error(), 400), nil
 		}
 	}
 
@@ -290,151 +1234,68 @@ func Handler(rctx context.Context, request events.APIGatewayProxyRequest) (event
 	if ok {
 		incident_count_max, err = strconv.ParseInt(q_incident_count_max, 10, 64)
 		if err != nil {
-			return events.APIGatewayProxyResponse{
-				StatusCode: 400,
-				Body:       err.Error(),
-				Headers:    defaultHeaders,
-			}, nil
+			return ServeError(err.Error(), 400), nil
 		}
 	}
 
-	res, err = MongoClient.Database("fyeo-di").Collection("assets").Find(ctx, filter2) //, options.Find().SetLimit(100))
-
+	assets, err := GetAssets(filter2)
 	if err != nil {
-		return events.APIGatewayProxyResponse{
-			StatusCode: 400,
-			Body:       err.Error(),
-			Headers:    defaultHeaders,
-		}, nil
+		return ServeError(err.Error(), 400), nil
 	}
 
-	//var assets []Asset
-	var assets []map[string]interface{}
 	var asset_list []string
-	for res.Next(ctx) {
-		//var doc Asset
-		doc := make(map[string]interface{})
 
-		err := res.Decode(&doc)
-		if err != nil {
-			return events.APIGatewayProxyResponse{
-				StatusCode: 400,
-				Body:       err.Error(),
-				Headers:    defaultHeaders,
-			}, nil
-		}
+	for i := range assets {
 
-		doc["group"] = cases[doc["case_id"].(string)].Group
-		doc["case_name"] = cases[doc["case_id"].(string)].Name
+		asset_list = append(asset_list, *assets[i].ID)
 
-		_, ok := doc["name"]
-		if ok {
-			_, ok := doc["name"].(map[string]interface{})["common"]
-			if ok {
-				_, ok := doc["name"].(map[string]interface{})["common"].(string)
-				if ok {
-					asset_list = append(asset_list, doc["name"].(map[string]interface{})["common"].(string))
-				}
-			}
-		}
-		assets = append(assets, doc)
+		assets[i].CaseName = case_map[*assets[i].CaseID].Name
+
 	}
 
-	if len(assets) < 1 {
-		return events.APIGatewayProxyResponse{
-			StatusCode: 400,
-			Body:       errors.New("No assets found for the case ID provided").Error(),
-			Headers:    defaultHeaders,
-		}, nil
-	}
-
-	//get incidents for incident count
-
-	filter3 := bson.M{"targets": bson.M{"$elemMatch": bson.M{"$in": asset_list}}}
-	res3, err := MongoClient.Database("fyeo-di").Collection("incidents").Find(context.Background(), filter3)
+	filter3 := bson.M{"target_ids": bson.M{"$in": asset_list}}
+	incidents, err := GetIncidentsTargetIDs(filter3)
 	if err != nil {
-		return events.APIGatewayProxyResponse{
-			StatusCode: 400,
-			Body:       err.Error(),
-			Headers:    defaultHeaders,
-		}, nil
+		return ServeError(err.Error(), 400), nil
 	}
 
-	incident_count_map := make(map[string]int)
-	//incidents := make(map[string]interface{})
-	//var incidents []map[string]interface{}
-	for res3.Next(context.Background()) {
-		incident := make(map[string]interface{})
-		err := res3.Decode(&incident)
-		if err != nil {
-			return events.APIGatewayProxyResponse{
-				StatusCode: 400,
-				Body:       err.Error(),
-				Headers:    defaultHeaders,
-			}, nil
-		}
-		_, ok := incident["targets"]
-		if ok {
-			_, ok = incident["targets"].(bson.A)
-			if ok {
-				for _, target := range incident["targets"].(bson.A) {
-					_, ok = target.(string)
-					if ok {
-						_, ok := incident_count_map[target.(string)]
-						if ok {
-							incident_count_map[target.(string)]++
-							continue
-						}
-						incident_count_map[target.(string)] = 1
-					}
+	incident_count_map := make(map[string]int64)
+
+	for _, incident := range incidents {
+
+		if incident.TargetIDs != nil {
+			for _, target_id := range *incident.TargetIDs {
+				_, ok := incident_count_map[target_id]
+				if ok {
+					incident_count_map[target_id]++
+					continue
 				}
+				incident_count_map[target_id] = 1
 			}
 		}
 
-		//incidents = append(incidents, incident)
-
-	}
-
-	var zero_incidents bool
-	if len(incident_count_map) < 1 {
-		zero_incidents = true
 	}
 
 	//add incident_count to each document in assets
-	var out []map[string]interface{}
+	var out []Asset
 	for i := range assets {
-		if zero_incidents {
-			assets[i]["incident_count"] = 0
 
+		count, ok := incident_count_map[*assets[i].ID]
+		if ok {
+			assets[i].IncidentCount = &count
 		} else {
-			if assets[i]["name"] != nil {
-				_, ok := assets[i]["name"].(map[string]interface{})["common"]
-				if ok {
-					_, ok := assets[i]["name"].(map[string]interface{})["common"].(string)
-					if ok {
-						_, ok := incident_count_map[assets[i]["name"].(map[string]interface{})["common"].(string)]
-						if ok {
-							assets[i]["incident_count"] = incident_count_map[assets[i]["name"].(map[string]interface{})["common"].(string)]
-
-						}
-					}
-				}
-			}
-		}
-
-		_, ok = assets[i]["incident_count"]
-		if !ok {
-			assets[i]["incident_count"] = 0
+			n := int64(0)
+			assets[i].IncidentCount = &n
 		}
 
 		if incident_count_max > 0 {
-			if int64(assets[i]["incident_count"].(int)) > incident_count_max {
+			if *assets[i].IncidentCount > incident_count_max {
 				continue
 			}
 		}
 
 		if incident_count_min > 0 {
-			if int64(assets[i]["incident_count"].(int)) < incident_count_min {
+			if *assets[i].IncidentCount < incident_count_min {
 				continue
 			}
 		}
@@ -444,11 +1305,7 @@ func Handler(rctx context.Context, request events.APIGatewayProxyRequest) (event
 
 	js, err := json.Marshal(out)
 	if err != nil {
-		return events.APIGatewayProxyResponse{
-			StatusCode: 400,
-			Body:       err.Error(),
-			Headers:    defaultHeaders,
-		}, nil
+		return ServeError(err.Error(), 400), nil
 	}
 
 	return events.APIGatewayProxyResponse{

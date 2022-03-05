@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"errors"
-	"time"
+	"fmt"
+	"net/url"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -16,11 +16,13 @@ import (
 type Strings []string
 
 type IncidentType struct {
-	ID             *string `json:"id" bson:"_id"`
-	Description    *string `json:"description" bson:"description"`
-	Class          *string `json:"class" bson:"class"`
-	Severity       *int64  `json:"severity" bson:"severity"`
-	BusinessImpact *string `json:"business_impact" bson:"business_impact"`
+	ID             *string `json:"id,omitempty" bson:"_id,omitempty"`
+	Severity       *int64  `json:"severity,omitempty" bson:"severity,omitempty"`
+	Title          *string `json:"title,omitempty" bson:"title,omitempty"`
+	Recommendation *string `json:"recommendation,omitempty" bson:"recommendation,omitempty"`
+	BusinessImpact *string `json:"business_impact,omitempty" bson:"business_impact,omitempty"`
+	Class          *string `json:"class,omitempty" bson:"class,omitempty"`
+	Description    *string `json:"description,omitempty" bson:"description,omitempty"`
 }
 
 var (
@@ -41,6 +43,7 @@ func main() {
 
 func Init() error {
 	var err error
+
 	err = ReuseMongo()
 	if err != nil {
 		return err
@@ -49,16 +52,31 @@ func Init() error {
 	return err
 }
 
+func UrlEncoded(str string) (string, error) {
+	u, err := url.Parse(str)
+	if err != nil {
+		return "", err
+	}
+	return u.String(), nil
+}
+
 func ReuseMongo() error {
+
 	if MongoClient != nil {
 		return nil
 	} else {
 		var err error
+		username := "stage"
+		password := "GK!2f&Wf#z&RS3"
+
+		password, err = UrlEncoded(password)
+		if err != nil {
+			return err
+		}
+
 		ctx := context.Background()
 
-		uri := "mongodb://192.168.0.229:27017"
-
-		MongoClient, err = mongo.Connect(ctx, options.Client().ApplyURI(uri))
+		MongoClient, err = mongo.Connect(ctx, options.Client().ApplyURI(fmt.Sprintf("mongodb://%s:%s@192.168.0.17:27017/?authSource=admin&ssl=false", username, password)))
 		if err != nil {
 			return err
 		}
@@ -67,64 +85,56 @@ func ReuseMongo() error {
 	return nil
 }
 
+type ErrorResponse struct {
+	Code    int    `json:"code,omitempty"`
+	Message string `json:"message,omitempty"`
+}
+
+func ServeError(message string, code int) events.APIGatewayProxyResponse {
+	js, _ := json.Marshal(ErrorResponse{
+		Code:    code,
+		Message: message,
+	})
+
+	return events.APIGatewayProxyResponse{
+		StatusCode: code,
+		Body:       string(js),
+		Headers:    defaultHeaders,
+	}
+}
+
 func Handler(rctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	var err error
-	ctx, cancel := context.WithTimeout(context.Background(), 14*time.Second)
-	defer cancel()
 
 	err = Init()
 	if err != nil {
-		return events.APIGatewayProxyResponse{
-			StatusCode: 400,
-			Body:       err.Error(),
-			Headers:    defaultHeaders,
-		}, nil
+		return ServeError(err.Error(), 400), nil
 	}
 
-	res, err := MongoClient.Database("fyeo-di").Collection("incident_descriptions").Find(ctx, bson.D{})
+	res, err := MongoClient.Database("fyeo-di").Collection("incident_types").Find(context.Background(), bson.D{})
 	if err != nil {
-		return events.APIGatewayProxyResponse{
-			StatusCode: 400,
-			Body:       err.Error(),
-			Headers:    defaultHeaders,
-		}, nil
+		return ServeError(err.Error(), 400), nil
 	}
 
 	var data []IncidentType
-	for res.Next(ctx) {
+	for res.Next(context.Background()) {
 		var doc IncidentType
 
 		err := res.Decode(&doc)
 		if err != nil {
-			return events.APIGatewayProxyResponse{
-				StatusCode: 400,
-				Body:       err.Error(),
-				Headers:    defaultHeaders,
-			}, nil
+			return ServeError(err.Error(), 400), nil
 		}
 
 		data = append(data, doc)
 	}
 
-	if len(data) < 1 {
-		return events.APIGatewayProxyResponse{
-			StatusCode: 400,
-			Body:       errors.New("No incident_types found").Error(),
-			Headers:    defaultHeaders,
-		}, nil
-	}
-
-	out, err := json.Marshal(data)
+	js, err := json.Marshal(data)
 	if err != nil {
-		return events.APIGatewayProxyResponse{
-			StatusCode: 400,
-			Body:       err.Error(),
-			Headers:    defaultHeaders,
-		}, nil
+		return ServeError(err.Error(), 400), nil
 	}
 
 	return events.APIGatewayProxyResponse{
-		Body:       string(out),
+		Body:       string(js),
 		StatusCode: 200,
 		Headers:    defaultHeaders,
 	}, nil
